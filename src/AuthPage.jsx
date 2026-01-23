@@ -178,11 +178,6 @@ function AuthPage() {
             <p>Advanced conversations with MindKore AI</p>
           </div>
           <div className="feature-card">
-            <div className="feature-icon">🔒</div>
-            <h3>Secure</h3>
-            <p>Your data is encrypted and protected</p>
-          </div>
-          <div className="feature-card">
             <div className="feature-icon">💬</div>
             <h3>Smart Chat</h3>
             <p>Context-aware conversations</p>
