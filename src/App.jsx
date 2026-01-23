@@ -1,15 +1,19 @@
-import { useState, useRef, useEffect } from 'react';
-import { 
-  Send, Sparkles, Trash2, Loader2, Bot, User, Copy, Check, 
-  MessageSquare, Zap, Stars, Moon, Sun, LogOut, ArrowLeft, Users
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Send, Sparkles, Trash2, Loader2, Bot, User, Copy, Check,
+  MessageSquare, Zap, Stars, Moon, Sun, LogOut, ArrowLeft, Users, History,
+  FileDown
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import AgentsPage from './AgentsPage';
+import ChatHistory from './ChatHistory';
 import './App.css';
-import React from 'react';
+import downloadMessageAsPDF from './functions/downloadMessageAsPDF.js';
+
+
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001';
 
@@ -23,6 +27,7 @@ function App() {
   const [sessionId] = useState(() => `session_${Date.now()}`);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [isDark, setIsDark] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -34,11 +39,38 @@ function App() {
     scrollToBottom();
   }, [messages]);
 
+  // Save chat to localStorage whenever messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      saveChatToHistory();
+    }
+  }, [messages]);
+
+  const saveChatToHistory = () => {
+    const chatKey = selectedAgent ? `chat_${sessionId}_${selectedAgent.id}` : `chat_${sessionId}`;
+
+    const chatData = {
+      messages: messages,
+      agentName: selectedAgent?.name || null,
+      agentId: selectedAgent?.id || null,
+      lastUpdated: new Date().toISOString(),
+      sessionId: sessionId
+    };
+
+    try {
+      localStorage.setItem(chatKey, JSON.stringify(chatData));
+    } catch (e) {
+      console.error('Error saving chat history:', e);
+    }
+  };
+
   const copyToClipboard = (text, index) => {
     navigator.clipboard.writeText(text);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
   };
+
+
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -56,7 +88,7 @@ function App() {
 
     try {
       // Include agent's system prompt if agent is selected
-      const messageToSend = selectedAgent 
+      const messageToSend = selectedAgent
         ? `${selectedAgent.systemPrompt}\n\nUser: ${input}`
         : input;
 
@@ -75,13 +107,13 @@ function App() {
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error:', error);
-      
+
       const errorMessage = {
         role: 'assistant',
         content: error.response?.data?.detail || 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date(),
       };
-      
+
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -100,9 +132,12 @@ function App() {
   };
 
   const handleSelectAgent = (agent) => {
+    console.log('Selecting agent:', agent);
+    console.log('Current view before:', currentView);
     setSelectedAgent(agent);
     setCurrentView('agent-chat');
     setMessages([]);
+    console.log('Current view after:', 'agent-chat');
   };
 
   const handleBackToHome = () => {
@@ -112,6 +147,18 @@ function App() {
 
   const handleGoToAgents = () => {
     setCurrentView('agents');
+  };
+
+  const handleSelectChat = (chat) => {
+    setMessages(chat.messages || []);
+
+    if (chat.agentId) {
+      // If it's an agent chat, we'd need to find the agent
+      // For now, just load the messages
+      setCurrentView('agent-chat');
+    } else {
+      setCurrentView('home');
+    }
   };
 
   // Agents Marketplace View
@@ -128,7 +175,7 @@ function App() {
         <header className="app-header">
           <div className="header-content">
             <div className="header-left">
-              <button 
+              <button
                 onClick={handleBackToHome}
                 className="icon-button back-button"
                 title="Back to home"
@@ -149,20 +196,20 @@ function App() {
                 </p>
               </div>
             </div>
-            
+
             <div className="header-actions">
-              <button 
+              <button
                 onClick={() => setIsDark(!isDark)}
                 className="icon-button theme-toggle"
                 title="Toggle theme"
               >
                 {isDark ? <Sun size={18} /> : <Moon size={18} />}
               </button>
-              
+
               {user && (
                 <div className="user-info">
                   <span className="user-name">{user.name}</span>
-                  <button 
+                  <button
                     onClick={logout}
                     className="icon-button logout-button"
                     title="Logout"
@@ -205,7 +252,7 @@ function App() {
         <div className="header-content">
           <div className="header-left">
             {(currentView === 'agent-chat' && selectedAgent) && (
-              <button 
+              <button
                 onClick={handleBackToHome}
                 className="icon-button back-button"
                 title="Back to home"
@@ -216,8 +263,8 @@ function App() {
             <div className="logo-container">
               <div className="logo-glow"></div>
               <div className="logo">
-                {selectedAgent ? (
-                  React.createElement(selectedAgent.icon, { className: 'logo-icon' })
+                {selectedAgent && selectedAgent.icon ? (
+                  React.createElement(selectedAgent.icon, { className: 'logo-icon', size: 28 })
                 ) : (
                   <Sparkles className="logo-icon" />
                 )}
@@ -227,24 +274,29 @@ function App() {
               <h1 className="app-title">{selectedAgent?.name || 'MindKore AI'}</h1>
               <p className="app-subtitle">
                 <Zap size={12} />
-                {selectedAgent?.category || 'Powered by MindKore AI'}
+                {selectedAgent?.category || 'Powered by MindKore'}
               </p>
             </div>
           </div>
-          
+
           <div className="header-actions">
-            <button 
+            <button
               onClick={() => setIsDark(!isDark)}
               className="icon-button theme-toggle"
               title="Toggle theme"
             >
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            
+
+            <button onClick={() => setShowHistory(true)} className="clear-button">
+              <History size={16} />
+              <span>View History</span>
+            </button>
+
             {user && (
               <div className="user-info">
                 <span className="user-name">{user.name}</span>
-                <button 
+                <button
                   onClick={logout}
                   className="icon-button logout-button"
                   title="Logout"
@@ -253,7 +305,7 @@ function App() {
                 </button>
               </div>
             )}
-            
+
             {messages.length > 0 && (
               <button onClick={clearChat} className="clear-button">
                 <Trash2 size={16} />
@@ -275,14 +327,14 @@ function App() {
                   <Stars className="stars-icon" />
                 </div>
               </div>
-              
+
               <div className="welcome-text">
                 <h2 className="welcome-title">
                   {selectedAgent ? `Chat with ${selectedAgent.name}` : 'Welcome to MindKore AI'}
                 </h2>
                 <p className="welcome-description">
-                  {selectedAgent 
-                    ? selectedAgent.description 
+                  {selectedAgent
+                    ? selectedAgent.description
                     : 'Your intelligent AI assistant for any task. Chat with me or connect with specialized agents.'}
                 </p>
               </div>
@@ -333,9 +385,9 @@ function App() {
                       <Bot size={20} />
                     </div>
                   )}
-                  
+
                   <div className={`message-bubble ${message.role}-bubble`}>
-                    {message.role === 'assistant' && (
+                    {message.role === 'assistant' && (<>
                       <button
                         onClick={() => copyToClipboard(message.content, index)}
                         className="copy-button"
@@ -347,8 +399,19 @@ function App() {
                           <Copy size={14} />
                         )}
                       </button>
+                      <button
+                        onClick={() => downloadMessageAsPDF(message.content, index)}
+                        className="pdf-button"
+                        title="Download as PDF"
+                      >
+                        <FileDown size={14} /> Download PDF
+                      </button>
+                    </>
                     )}
-                    
+
+                    {/* New PDF button */}
+
+
                     <div className="message-content">
                       {message.role === 'assistant' ? (
                         <div className="markdown-content">
@@ -360,14 +423,14 @@ function App() {
                         <p className="message-text">{message.content}</p>
                       )}
                     </div>
-                    
-                    <p className="message-time">
+
+                    {/* <p className="message-time">
                       <span className="time-dot"></span>
                       {message.timestamp.toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
-                    </p>
+                    </p> */}
                   </div>
 
                   {message.role === 'user' && (
@@ -377,7 +440,7 @@ function App() {
                   )}
                 </div>
               ))}
-              
+
               {isLoading && (
                 <div className="message-wrapper assistant-message">
                   <div className="message-avatar assistant-avatar">
@@ -442,6 +505,14 @@ function App() {
           </p>
         </div>
       </footer>
+
+      {/* Chat History Sidebar */}
+      <ChatHistory
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        onSelectChat={handleSelectChat}
+        currentSessionId={`chat_${sessionId}`}
+      />
     </div>
   );
 }

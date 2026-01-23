@@ -276,6 +276,17 @@ body {
   color: white;
 }
 
+.history-button {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+  color: var(--accent-primary);
+}
+
+.history-button:hover {
+  background: var(--accent-primary);
+  color: white;
+}
+
 .clear-button {
   display: flex;
   align-items: center;
@@ -1332,4 +1343,25 @@ body {
   .input-wrapper {
     border-width: 2px;
   }
+}
+
+.message-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pdf-button {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.pdf-button:hover {
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
 }
