@@ -726,8 +726,7 @@ body {
 }
 
 .input-container {
-  position: relative;
-}
+  position: relative;}
 
 .input-glow {
   position: absolute;
@@ -756,7 +755,8 @@ body {
 }
 
 .input-wrapper:focus-within {
-  border-color: var(--accent-primary);
+  /* border-color: var(--accent-primary); */
+  border-color: #0a0a0f;
 }
 
 .input-icon {
@@ -766,7 +766,7 @@ body {
 
 .message-input {
   flex: 1;
-  background: transparent;
+  /* background: transparent; */
   border: none;
   outline: none;
   font-size: 1rem;

@@ -26,7 +26,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(() => `session_${Date.now()}`);
   const [copiedIndex, setCopiedIndex] = useState(null);
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -71,7 +71,6 @@ function App() {
   };
 
 
-
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -91,6 +90,9 @@ function App() {
       const messageToSend = selectedAgent
         ? `${selectedAgent.systemPrompt}\n\nUser: ${input}`
         : input;
+
+      console.log("message To send", messageToSend);
+
 
       const response = await axios.post(`${API_URL}/api/chat`, {
         message: messageToSend,
@@ -280,18 +282,27 @@ function App() {
           </div>
 
           <div className="header-actions">
-            <button
+            {/* <button
               onClick={() => setIsDark(!isDark)}
               className="icon-button theme-toggle"
               title="Toggle theme"
             >
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+            </button> */}
 
             <button onClick={() => setShowHistory(true)} className="clear-button">
               <History size={16} />
               <span>View History</span>
             </button>
+
+
+
+            {messages.length > 0 && (
+              <button onClick={clearChat} className="clear-button">
+                <Trash2 size={16} />
+                <span>Clear Chat</span>
+              </button>
+            )}
 
             {user && (
               <div className="user-info">
@@ -304,13 +315,6 @@ function App() {
                   <LogOut size={18} />
                 </button>
               </div>
-            )}
-
-            {messages.length > 0 && (
-              <button onClick={clearChat} className="clear-button">
-                <Trash2 size={16} />
-                <span>Clear Chat</span>
-              </button>
             )}
           </div>
         </div>
@@ -359,7 +363,7 @@ function App() {
                 </div>
               )}
 
-              <div className="suggestions-grid">
+              {!selectedAgent && <div className="suggestions-grid">
                 {suggestionPrompts.map((suggestion, i) => (
                   <button
                     key={i}
@@ -371,7 +375,14 @@ function App() {
                     <span className="suggestion-text">{suggestion.text}</span>
                   </button>
                 ))}
-              </div>
+              </div>}
+              {selectedAgent && <div>
+                <p style={{ color: "indigo" }}>Capabilities</p>
+                <br></br>
+                {selectedAgent.capabilities.map((a, i) => (
+                  <li style={{ color: "gray" }} key={i}>{a}<br></br><br></br></li>
+                ))}
+              </div>}
             </div>
           ) : (
             <div className="messages-list">
@@ -448,7 +459,7 @@ function App() {
                   </div>
                   <div className="message-bubble assistant-bubble loading-bubble">
                     <div className="loading-indicator">
-                      <Loader2 size={18} className="loading-spinner" />
+                      {/* <Loader2 size={18} className="loading-spinner" /> */}
                       <div className="loading-dots">
                         <span className="dot"></span>
                         <span className="dot"></span>
@@ -469,7 +480,7 @@ function App() {
       <footer className="app-footer">
         <div className="footer-content">
           <form onSubmit={sendMessage} className="input-form">
-            <div className="input-container">
+            {/* <div className="input-container">
               <div className="input-glow"></div>
               <div className="input-wrapper">
                 <MessageSquare size={20} className="input-icon" />
@@ -495,6 +506,117 @@ function App() {
                       <Send size={20} />
                     )}
                     <span className="button-text">Send</span>
+                  </span>
+                </button>
+              </div>
+            </div> */}
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              //maxWidth: '800px',
+              //margin: '0 auto',
+              padding: '1px'
+            }}>
+              {/* Glow effect layer */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 70%)',
+                pointerEvents: 'none',
+                borderRadius: '12px',
+                zIndex: 1
+              }} />
+
+              {/* Main wrapper */}
+              <div style={{
+                position: 'relative',
+                zIndex: 2,
+                display: 'flex',
+                alignItems: 'center',
+                //backgroundColor: '#000000',
+                border: '1px solid #8f8b8bff',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(233, 229, 229, 0.5)',
+                height: "60px"
+              }}>
+                {/* Icon */}
+                <MessageSquare
+                  size={20}
+                  style={{
+                    color: '#272323ff',
+                    marginLeft: '16px',
+                    flexShrink: 0
+                  }}
+                />
+
+                {/* Input field */}
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={`Hi ${ user.name}...., Ask me anything...`}
+                  disabled={isLoading}
+                  style={{
+                    flex: 1,
+                    backgroundColor: 'transparent',
+                    color: '#332f2fff',
+                    border: 'none',
+                    outline: 'none',
+                    padding: '14px 12px',
+                    fontSize: '16px',
+                    width: '100%',
+                    caretColor: '#3b82f6',
+                    height: "50%"
+                  }}
+                />
+
+                {/* Send button */}
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isLoading}
+                  style={{
+                    position: 'relative',
+                    background: 'none',
+                    border: 'none',
+                    padding: '0 16px',
+                    cursor: (!input.trim() || isLoading) ? 'not-allowed' : 'pointer',
+                    opacity: (!input.trim() || isLoading) ? 0.5 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {/* Button gradient background */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    //background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
+                    opacity: 0.15,
+                    borderRadius: '0 12px 12px 0'
+                  }} />
+
+                  <span style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: 'black',
+                    fontWeight: 500
+                  }}>
+                    {isLoading ? (
+                      <Loader2
+                        size={20}
+                        style={{
+                          animation: 'spin 1s linear infinite'
+                        }}
+                      />
+                    ) : (
+                      <Send size={20} />
+                    )}
+                    <span style={{ fontSize: '14px' }}>Send</span>
                   </span>
                 </button>
               </div>
